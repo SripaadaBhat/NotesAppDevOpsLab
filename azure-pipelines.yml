@@ -9,8 +9,7 @@ variables:
   DOCKER_TAG: 'latest'
   SONAR_PROJECT_KEY: 'notesapp'
   SONAR_PROJECT_NAME: 'NotesApp'
-  VERCEL_ORG_ID: 'team_MoZBOeTvcSHt1Imm8pb2ajMM'
-  VERCEL_PROJECT_ID: 'prj_YLDlmu06erE1rVJ6mb5Zl43aF4r7'
+  
 
 
 stages:
