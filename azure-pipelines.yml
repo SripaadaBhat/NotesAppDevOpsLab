@@ -131,7 +131,7 @@ stages:
         docker push sripaada265/$(DOCKER_IMAGE):$(DOCKER_TAG)
       displayName: 'Push Docker Image'
 
-      # =========================
+     # =========================
 # VERCEL DEPLOYMENT STAGE
 # =========================
 - stage: DeployToVercel
@@ -164,7 +164,10 @@ stages:
         VERCEL_ORG_ID: $(VERCEL_ORG_ID)
         VERCEL_PROJECT_ID: $(VERCEL_PROJECT_ID)
 
-  - stage: Deploy
+# =========================
+# RENDER DEPLOYMENT STAGE
+# =========================
+- stage: Deploy
   displayName: 'Deploy to Render'
 
   dependsOn: DeployToVercel

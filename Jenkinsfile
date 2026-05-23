@@ -20,7 +20,7 @@ pipeline {
         DOCKER_TAG = 'latest'
 
         RENDER_SERVICE_ID = 'srv-d88l4mn7f7vs73bbrvs0'
-        RENDER_API_KEY = credentials('render-api-key')
+        RENDER_API_KEY = credentials('RENDER_API_KEY')
         
         
 
