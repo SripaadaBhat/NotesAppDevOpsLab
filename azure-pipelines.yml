@@ -1,0 +1,166 @@
+trigger:
+- main
+
+pool:
+  name: 'SelfHostedPool'
+
+variables:
+  DOCKER_IMAGE: 'notes-app'
+  DOCKER_TAG: 'latest'
+  SONAR_PROJECT_KEY: 'notesapp'
+  SONAR_PROJECT_NAME: 'NotesApp'
+  VERCEL_ORG_ID: 'team_MoZBOeTvcSHt1Imm8pb2ajMM'
+  VERCEL_PROJECT_ID: 'prj_YLDlmu06erE1rVJ6mb5Zl43aF4r7'
+
+
+stages:
+
+# =========================
+# BUILD & ANALYSIS STAGE
+# =========================
+- stage: BuildAndAnalyze
+  displayName: 'Build and Analyze'
+
+  jobs:
+  - job: Build
+    displayName: 'Install, Scan, and Analyze'
+
+    steps:
+
+    # =========================
+    # Checkout Repository
+    # =========================
+    - checkout: self
+
+    # =========================
+    # Install Node.js
+    # =========================
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Install Node.js'
+
+    # =========================
+    # Install Dependencies
+    # =========================
+    - script: |
+        npm install
+      displayName: 'Install Dependencies'
+
+    # =========================
+    # OWASP Dependency Check
+    # =========================
+    - script: |
+        "C:\Users\sripaada bhat\Downloads\dependency-check-12.2.2-release\dependency-check\bin\dependency-check.bat" ^
+        --project "NotesApp" ^
+        --scan . ^
+        --format XML ^
+        --out dependency-check-report
+      displayName: 'OWASP Dependency Check'
+
+    # =========================
+    # Publish OWASP Report
+    # =========================
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'dependency-check-report'
+        artifactName: 'OWASP-Report'
+      displayName: 'Publish OWASP Report'
+
+    # =========================
+    # SonarQube Prepare
+    # =========================
+    - script: |
+        "C:\sonar-scanner-cli-8.0.1.6346-windows-x64\sonar-scanner-8.0.1.6346-windows-x64\bin\sonar-scanner.bat" ^
+        -Dsonar.projectKey=$(SONAR_PROJECT_KEY) ^
+        -Dsonar.projectName=$(SONAR_PROJECT_NAME) ^
+        -Dsonar.sources=. ^
+        -Dsonar.host.url=http://localhost:9000 ^
+        -Dsonar.token=$(SONAR_TOKEN)
+      displayName: 'Run SonarQube Analysis'
+
+# =========================
+# DOCKER STAGE
+# =========================
+- stage: Docker
+  displayName: 'Docker Build and Push'
+
+  dependsOn: BuildAndAnalyze
+
+  jobs:
+  - job: DockerBuild
+    displayName: 'Build and Push Docker Image'
+
+    steps:
+
+    - checkout: self
+
+    # =========================
+    # Docker Build
+    # =========================
+    - script: |
+        docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+      displayName: 'Build Docker Image'
+
+    # =========================
+    # Run Docker Container
+    # =========================
+    - script: |
+        docker rm -f notes-app-container
+
+        docker run -d ^
+        --name notes-app-container ^
+        -p 3001:3000 ^
+        $(DOCKER_IMAGE):$(DOCKER_TAG)
+      displayName: 'Run Docker Container'
+
+    # =========================
+    # Docker Login
+    # =========================
+    - task: Docker@2
+      displayName: 'Login to DockerHub'
+      inputs:
+        command: login
+        containerRegistry: 'DockerHub-ServiceConnection'
+
+    # =========================
+    # Docker Push
+    # =========================
+    - script: |
+        docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) sripaada265/$(DOCKER_IMAGE):$(DOCKER_TAG)
+
+        docker push sripaada265/$(DOCKER_IMAGE):$(DOCKER_TAG)
+      displayName: 'Push Docker Image'
+
+      # =========================
+# VERCEL DEPLOYMENT STAGE
+# =========================
+- stage: DeployToVercel
+  displayName: 'Deploy to Vercel'
+
+  dependsOn: Docker
+
+  jobs:
+  - job: VercelDeploy
+    displayName: 'Deploy Frontend to Vercel'
+
+    steps:
+
+    - checkout: self
+
+    # Install Vercel CLI
+    - script: |
+        npm install -g vercel
+      displayName: 'Install Vercel CLI'
+
+    # Deploy to Vercel
+    - script: |
+        vercel pull --yes --environment=production --token=$(VERCEL_TOKEN)
+
+        vercel build --prod --token=$(VERCEL_TOKEN)
+
+        vercel deploy --prebuilt --prod --token=$(VERCEL_TOKEN)
+      displayName: 'Deploy to Vercel'
+      env:
+        VERCEL_ORG_ID: $(VERCEL_ORG_ID)
+        VERCEL_PROJECT_ID: $(VERCEL_PROJECT_ID)
