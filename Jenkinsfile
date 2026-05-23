@@ -109,7 +109,7 @@ stage('SonarQube Analysis') {
 
          stage('Deploy Frontend to Vercel') {
             steps {
-                sh """
+                bat """
                 npm install -g vercel
 
                 vercel --prod \
