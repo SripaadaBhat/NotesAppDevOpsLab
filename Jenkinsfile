@@ -86,7 +86,7 @@ stage('SonarQube Analysis') {
         stage('Run Docker Container') {
     steps {
         bat """
-        docker rm -f notes-app-container
+        docker rm -f notes-app-container || exit 0
 
         docker run -d ^
         --name notes-app-container ^
@@ -110,30 +110,32 @@ stage('SonarQube Analysis') {
         }
 
          stage('Deploy Frontend to Vercel') {
-            steps {
-                withCredentials([
-    string(credentialsId: 'VERCEL_TOKEN', variable: 'VERCEL_TOKEN')
-]) {
-                bat """
-                npm install -g vercel
+    steps {
+        withCredentials([
+            string(credentialsId: 'VERCEL_TOKEN', variable: 'VERCEL_TOKEN')
+        ]) {
 
-                vercel --prod \
-                --token=${VERCEL_TOKEN} \
-                --yes
-                """
-            }
+            bat """
+            npm install -g vercel
+
+            vercel --prod ^
+            --token=%VERCEL_TOKEN% ^
+            --yes
+            """
         }
     }
+}
         
     stage('Deploy Backend to Render') {
-            steps {
-                bat """
-                curl -X POST \
-                https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys \
-                -H 'Authorization: Bearer ${render-api-key}'
-                """
-            }
-        }
+    steps {
+        bat """
+        curl -X POST ^
+        https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys ^
+        -H "Authorization: Bearer ${RENDER_API_KEY}" ^
+        -H "Accept: application/json"
+        """
+    }
+}
 
        
     }
