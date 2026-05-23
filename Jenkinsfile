@@ -19,6 +19,8 @@ pipeline {
         DOCKER_IMAGE = 'notes-app'
         DOCKER_TAG = 'latest'
 
+        RENDER_SERVICE_ID = 'srv-d88l4mn7f7vs73bbrvs0'
+        RENDER_API_KEY = credentials('render-api-key')
         
         
 
@@ -123,6 +125,15 @@ stage('SonarQube Analysis') {
         }
     }
         
+    stage('Deploy Backend to Render') {
+            steps {
+                sh """
+                curl -X POST \
+                https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys \
+                -H 'Authorization: Bearer ${RENDER_API_KEY}'
+                """
+            }
+        }
 
        
     }

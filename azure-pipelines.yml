@@ -163,3 +163,21 @@ stages:
       env:
         VERCEL_ORG_ID: $(VERCEL_ORG_ID)
         VERCEL_PROJECT_ID: $(VERCEL_PROJECT_ID)
+
+    - stage: Deploy
+  displayName: 'Deploy to Render'
+
+  dependsOn: Build
+
+  jobs:
+  - job: RenderDeploy
+    displayName: 'Trigger Render Deployment'
+
+    steps:
+
+    - script: |
+        curl -X POST ^
+        https://api.render.com/v1/services/$(RENDER_SERVICE_ID)/deploys ^
+        -H "Authorization: Bearer $(RENDER_API_KEY)" ^
+        -H "Accept: application/json"
+      displayName: 'Deploy to Render'
