@@ -109,6 +109,9 @@ stage('SonarQube Analysis') {
 
          stage('Deploy Frontend to Vercel') {
             steps {
+                withCredentials([
+    string(credentialsId: 'VERCEL_TOKEN', variable: 'VERCEL_TOKEN')
+]) {
                 bat """
                 npm install -g vercel
 
@@ -118,6 +121,7 @@ stage('SonarQube Analysis') {
                 """
             }
         }
+    }
         
 
        
